@@ -60,9 +60,12 @@ def sse_view(request):
         try:
             for message in pubsub.listen():
                 if message['type'] == 'message':
-                    yield f"data: {message['data']}\n\n"
-                    data = json.loads(message['data'])
-                    if data.get('type') in ('done', 'error'):
+                    data = message['data']
+                    if isinstance(data, bytes):
+                        data = data.decode('utf-8')
+                    yield f"data: {data}\n\n"
+                    parsed = json.loads(data)
+                    if parsed.get('type') in ('done', 'error'):
                         break
         finally:
             pubsub.unsubscribe()

@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('ssh/', include('ssh_exec.urls')),
     path('docker/', include('docker_exec.urls')),
+    path('mq/', include('mq_exec.urls')),
 ]

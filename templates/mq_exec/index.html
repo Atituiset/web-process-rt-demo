@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息队列执行 - 实时输出</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #fff; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 120px; color: #aaa; }
+        input { width: 400px; padding: 8px; background: #333; color: #fff; border: 1px solid #555; }
+        button { padding: 10px 20px; background: #0e639c; color: #fff; border: none; cursor: pointer; }
+        button:hover { background: #1177bb; }
+        #output { background: #0d0d0d; padding: 15px; height: 400px; overflow-y: auto; border: 1px solid #333; margin-top: 20px; white-space: pre-wrap; }
+        .stdout { color: #4ec9b0; }
+        .stderr { color: #f14c4c; }
+        .done { color: #6a9955; }
+        .error { color: #f14c4c; font-weight: bold; }
+        h1 { color: #4ec9b0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>消息队列执行 (Celery + Redis)</h1>
+        <div class="form-group">
+            <label>Redis URL:</label>
+            <input type="text" id="redis_url" value="redis://localhost:6379/0">
+        </div>
+        <div class="form-group">
+            <label>命令:</label>
+            <input type="text" id="command" value="for i in 1 2 3 4 5; do echo 'MQ Line $i'; sleep 1; done">
+            <button onclick="startExec()">执行</button>
+        </div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let es = null;
+
+        function startExec() {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            const redis_url = document.getElementById('redis_url').value;
+            const command = document.getElementById('command').value;
+
+            const url = `/mq/exec/?redis_url=${encodeURIComponent(redis_url)}&command=${encodeURIComponent(command)}`;
+
+            if (es) es.close();
+            es = new EventSource(url);
+
+            es.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                const span = document.createElement('span');
+                span.className = data.type;
+                span.textContent = data.data;
+                output.appendChild(span);
+                output.scrollTop = output.scrollHeight;
+
+                if (data.type === 'done' || data.type === 'error') {
+                    es.close();
+                    es = null;
+                }
+            };
+
+            es.onerror = function() {
+                output.appendChild(Object.assign(document.createElement('span'), { className: 'error', textContent: '连接错误\n' }));
+                es.close();
+                es = null;
+            };
+        }
+    </script>
+</body>
+</html>

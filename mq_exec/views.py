@@ -2,6 +2,7 @@ import json
 import subprocess
 import redis
 from django.http import StreamingHttpResponse
+from django.shortcuts import render
 from django.urls import path
 from celery import shared_task
 

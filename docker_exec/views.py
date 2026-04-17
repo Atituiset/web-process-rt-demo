@@ -1,6 +1,7 @@
 import json
 import docker
 from django.http import StreamingHttpResponse
+from django.shortcuts import render
 from django.urls import path
 
 
